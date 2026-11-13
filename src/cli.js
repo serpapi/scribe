@@ -1,8 +1,16 @@
 import * as readline from 'node:readline/promises';
 import { checkCmdExists, runCommand } from './main.js';
-import { env, stdin, stdout } from 'node:process';
+import { loadEnvFile, env, stdin, stdout } from 'node:process';
+import fs from 'node:fs';
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
+
+// Load environment variables
+const envFilePath = "./.env"
+if (fs.existsSync(envFilePath)) {
+    loadEnvFile(envFilePath);
+}
+let globalApiKey = env.SERPAPI_KEY;
 
 /**
  * Get the list of arguments from command line and parse them as an object.
@@ -42,8 +50,24 @@ function showHelp() {
     console.log(helpMessage);
 }
 
+/**
+ * Prompts the user for an API key, and saves it to the settings file.
+ * @param {string} envPath Full path to settings/env file
+ * @returns New API key
+ */
+async function saveApiKey(pathToFile) {
+    const apiKey = await askUser("Paste your API key from the https://serpapi.com/manage-api-key page:");
+    fs.writeFileSync(pathToFile, `SERPAPI_KEY=${apiKey}\nINFO=DO NOT SHARE THIS FILE!`);
+    console.log(`Saved API key to ${pathToFile}`);
+    return apiKey;
+}
+
 async function main() {
     const args = getArgs();
+    if (globalApiKey === "" || globalApiKey == undefined || args.hasOwnProperty("login")) {
+        // Set API key if it's missing, or if the user requested a login again
+        await saveApiKey(envFilePath);
+    };
     console.log("Not available yet!");
 }
 
