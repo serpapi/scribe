@@ -1,3 +1,7 @@
+#!/usr/bin/env node
+
+// CLI for Scribe
+
 import * as readline from 'node:readline/promises';
 import { checkCmdExists, runCommand } from './main.js';
 import { loadEnvFile, env, stdin, stdout } from 'node:process';
