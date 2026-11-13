@@ -1,0 +1,31 @@
+{
+  "name": "scribe",
+  "version": "1.0.0",
+  "description": "Convert a YouTube video into an eBook for easy reading.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/serpapi/scribe.git"
+  },
+  "keywords": [
+    "youtube",
+    "serpapi",
+    "video",
+    "ebook",
+    "epub"
+  ],
+  "license": "MIT",
+  "author": "SerpApi <contact@serpapi.com> (https://serpapi.com/)",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/serpapi/scribe/issues"
+  },
+  "homepage": "https://github.com/serpapi/scribe#readme",
+  "dependencies": {
+    "express": "5.3.0",
+    "serve-static": "2.2.1"
+  }
+}

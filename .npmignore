@@ -1,0 +1,14 @@
+# New files in this should probably be added to .gitignore as well!
+
+# Node and NPM files
+node_modules
+.npmrc
+.npm
+
+# Junk system files
+.DS_Store
+
+# Files not needed in NPM package
+Dockerfile
+.dockerignore
+captain-definition
