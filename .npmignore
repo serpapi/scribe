@@ -12,3 +12,6 @@ node_modules
 Dockerfile
 .dockerignore
 captain-definition
+
+# Book storage
+books

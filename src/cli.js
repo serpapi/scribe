@@ -3,11 +3,16 @@
 // CLI for Scribe
 
 import * as readline from 'node:readline/promises';
+import path from 'path';
 import { checkCmdExists, runCommand } from './main.js';
 import { loadEnvFile, env, stdin, stdout } from 'node:process';
 import fs from 'node:fs';
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
+const booksDir = path.resolve(process.cwd(), './books');
+
+// Regex to find video ID in a YouTube URL, demo: https://regex101.com/r/0Plpyd/1
+const youtubeRegex = /^.*(youtu\.be\/|embed\/|shorts\/|\?v=|\&v=)(?<videoID>[^#\&\?]*).*/;
 
 // Load environment variables
 const envFilePath = "./.env"
@@ -31,6 +36,8 @@ function getArgs() {
             // Get the value and store it
             const nextValue = array[i + 1];
             result[cleanKey] = nextValue;
+        } else if (currentItem.startsWith('http')) {
+            result['url'] = currentItem;
         }
     }
     return result;
@@ -72,7 +79,22 @@ async function main() {
         // Set API key if it's missing, or if the user requested a login again
         await saveApiKey(envFilePath);
     };
-    console.log("Not available yet!");
+    // Check that books folder is available
+    if (fs.existsSync(booksDir)) {
+        console.log(`Found books directory: ${booksDir}`);
+    } else {
+        fs.mkdirSync(booksDir);
+        console.log(`Created books directory: ${booksDir}`);
+    }
+    // Check that valid URL is provided
+    let videoId;
+    try {
+        videoId = youtubeRegex.exec(args.url)['groups']['videoID'];
+        console.log(`Found video ID: ${videoId}`);
+    } catch (e) {
+        console.log(`Could not extract video ID from URL: ${args.url}`);
+        process.exit(1);
+    }
 }
 
 // Listen for termination signals
