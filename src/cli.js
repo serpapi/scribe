@@ -5,7 +5,7 @@
 import { machine, type, release } from "node:os";
 import * as readline from 'node:readline/promises';
 import path from 'path';
-import { checkCmdExists, runCommand, getAccountInfo, getSerpTranscript } from './main.js';
+import { checkCmdExists, runCommand, getAccountInfo, getSerpTranscript, getSerpVideoInfo } from './main.js';
 import { loadEnvFile, env, stdin, stdout } from 'node:process';
 import fs from 'node:fs';
 
@@ -75,7 +75,7 @@ async function saveApiKey(pathToFile) {
 async function main() {
     const booksDir = path.resolve(process.cwd(), './books');
     const args = getArgs();
-    let convertInfo = {};
+    let actionData = {};
     // Show help message if requested or missing parameters
     if (!args.hasOwnProperty("url") || args.hasOwnProperty("help")) {
         showHelp();
@@ -83,12 +83,12 @@ async function main() {
     }
     // Set API key
     if (env.SERPAPI_KEY) {
-        convertInfo.serpApiKey = env.SERPAPI_KEY;
+        actionData.serpApiKey = env.SERPAPI_KEY;
     } else if (args.hasOwnProperty("login") || env.SERPAPI_KEY === "") {
-        convertInfo.serpApiKey = await saveApiKey(envFilePath);
+        actionData.serpApiKey = await saveApiKey(envFilePath);
     }
     // Show welcome message
-    const accountData = await getAccountInfo(convertInfo.serpApiKey);
+    const accountData = await getAccountInfo(actionData.serpApiKey);
     console.log(`SerpAPI Scribe - ${type()} ${release()} (${machine()})\n======\nAccount email: ${accountData["account_email"] || "Unknown"}\nRemaining searches: ${accountData["total_searches_left"] || "Unknown"}\nManage account: https://serpapi.com/dashboard\n======\n`);
     // Check that books folder is available
     if (fs.existsSync(booksDir)) {
@@ -97,7 +97,7 @@ async function main() {
         fs.mkdirSync(booksDir);
         console.log(`Created books directory: ${booksDir}`);
     }
-    convertInfo.outputDir = booksDir;
+    actionData.outputDir = booksDir;
     // Check that valid URL is provided
     let videoId;
     try {
@@ -107,13 +107,19 @@ async function main() {
         console.log(`Could not extract video ID from URL: ${args.url}`);
         return;
     }
-    convertInfo.videoId = videoId;
+    actionData.videoId = videoId;
     // Set file format (will eventually contain more than .txt)
-    convertInfo.outputFormat = "html";
-    // Get video transcript
+    actionData.outputFormat = "html";
+    // Get video information and transcript
+    console.log("Fetching video information...");
+    let videoInfo = await getSerpVideoInfo(actionData.videoId, actionData.serpApiKey);
+    actionData = {...actionData, ...videoInfo};
     console.log('Fetching transcript...');
-    let exportedPath = await getSerpTranscript(convertInfo);
-    console.log(`Saved file: ${exportedPath}`);
+    let bookText = await getSerpTranscript(actionData);
+    // Write file
+    const outputFilePath = path.resolve(actionData.outputDir, `${actionData.videoTitle} ${actionData.videoId}.md`);
+    fs.writeFileSync(outputFilePath, bookText);
+    console.log(`Saved file: ${outputFilePath}`);
 }
 
 // Listen for termination signals

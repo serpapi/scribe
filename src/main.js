@@ -1,6 +1,16 @@
 import { spawn, execSync } from "node:child_process";
-import path from 'path';
-import fs from 'node:fs';
+
+/**
+ * @typedef {Object} VideoSettings
+ * @property {string} settings.serpApiKey The API key for SerpApi.
+ * @property {string} settings.outputDir The absolute path to where the export file should be stored.
+ * @property {string} settings.videoId The ID for the YouTube video.
+ * @property {string} settings.videoUrl The full URL for the YouTube video.
+ * @property {string} settings.videoCreator The channel name for the YouTube video.
+ * @property {string} settings.videoTitle The title of the YouTube video.
+ * @property {string} settings.videoDate The publish date of the YouTube video in YYY-MM-DD format.
+ * @property {string} settings.outputFormat The output format for the file.
+ */
 
 /**
  * Checks if a given command or executable is available to the system.
@@ -45,13 +55,49 @@ async function getAccountInfo(apiKey) {
 }
 
 /**
- * Get a YouTube video transcript with SerpApi and save it to the specified directory.
- * @param {object} settings The settings configuration. 
- * @param {string} settings.serpApiKey The API key for SerpApi.
- * @param {string} settings.outputDir The absolute path to where the export file should be stored.
- * @param {string} settings.videoId The ID for the YouTube video.
- * @param {string} settings.outputFormat The output format for the file.
- * @returns {string} The absolute path to the exported file.
+ * Get the URL, title, creator, and publish date of a YouTube video with SerpApi, and return them in a JSON object ready for appending to a VideoSettings object.
+ * @param {string} videoId The ID of the YouTube video.
+ * @param {string} serpApiKey The API key for SerpApi.
+ * @returns {Promise<object>} The object with `videoUrl`, `videoTitle`, `videoCreator`, and `videoDate` keys.
+ */
+async function getSerpVideoInfo(videoId, serpApiKey) {
+    let result;
+    // Send API request
+    const apiReq = {
+        engine: "youtube_video",
+        v: videoId,
+        api_key: serpApiKey
+    };
+    const url = "https://serpapi.com/search?" + new URLSearchParams(apiReq);
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+        result = await response.json();
+    } catch (error) {
+        throw new Error(error);
+    }
+    // Convert date to
+    let publishDate;
+    if (result?.published_date) {
+        const d = new Date(result.published_date + " UTC");
+        publishDate = d.toISOString().slice(0, 10);
+    }
+    // Return data
+    const data = {
+        videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
+        videoTitle: (result?.title || "Unknown Title"),
+        videoCreator: (result?.channel?.name || "Unknown Creator"),
+        videoDate: (publishDate || "")
+    }
+    return data;
+}
+
+/**
+ * Get a YouTube video transcript with SerpApi and convert it to Pandoc's Markdown format.
+ * @param {VideoSettings} settings The settings configuration.
+ * @returns {Promise<string>} The generated book in Markdown format.
  */
 async function getSerpTranscript(settings) {
     let result;
@@ -85,7 +131,14 @@ async function getSerpTranscript(settings) {
         chapters[chapterIndex].snippets.push({ ...line, snippet });
     }
     // Create Pandoc-formatted Markdown file
-    let bookText = "";
+    let bookText = `---
+title: "${settings.videoTitle}"
+author: "${settings.videoCreator}"
+date: ${settings.videoDate}
+description: "${settings.videoUrl}"
+rights: "Converted with SerpApi Scribe: https://github.com/serpapi/scribe"
+language: en
+---\n\n`;
     for (let chapter of chapters) {
         bookText += `# ${chapter.chapter}\n\n`;
         for (let [i, value] of chapter.snippets.entries()) {
@@ -98,10 +151,7 @@ async function getSerpTranscript(settings) {
             }
         }
     }
-    // Write file
-    const outputFilePath = path.resolve(settings.outputDir, `${settings.videoId}.md`);
-    fs.writeFileSync(outputFilePath, bookText);
-    return outputFilePath;
+    return bookText;
 }
 
 /**
@@ -131,4 +181,4 @@ function runCommand(command, args) {
     });
 }
 
-export { checkCmdExists, runCommand, getAccountInfo, getSerpTranscript }
+export { checkCmdExists, runCommand, getAccountInfo, getSerpTranscript, getSerpVideoInfo }
