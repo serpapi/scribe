@@ -5,7 +5,7 @@
 import { machine, type, release } from "node:os";
 import * as readline from 'node:readline/promises';
 import path from 'path';
-import { checkCmdExists, runCommand, getAccountInfo, getSerpTranscript, getSerpVideoInfo } from './main.js';
+import { checkCmdExists, runCommand, getAccountInfo, getSerpTranscript, getSerpVideoInfo, saveFile } from './main.js';
 import { loadEnvFile, env, stdin, stdout } from 'node:process';
 import fs from 'node:fs';
 
@@ -108,8 +108,6 @@ async function main() {
         return;
     }
     actionData.videoId = videoId;
-    // Set file format (will eventually contain more than .txt)
-    actionData.outputFormat = "html";
     // Get video information and transcript
     console.log("Fetching video information...");
     let videoInfo = await getSerpVideoInfo(actionData.videoId, actionData.serpApiKey);
@@ -117,9 +115,8 @@ async function main() {
     console.log('Fetching transcript...');
     let bookText = await getSerpTranscript(actionData);
     // Write file
-    const outputFilePath = path.resolve(actionData.outputDir, `${actionData.videoTitle} ${actionData.videoId}.md`);
-    fs.writeFileSync(outputFilePath, bookText);
-    console.log(`Saved file: ${outputFilePath}`);
+    let savedFilePath = await saveFile(actionData, bookText);
+    console.log(`Saved file: ${savedFilePath}`);
 }
 
 // Listen for termination signals

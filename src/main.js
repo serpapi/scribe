@@ -1,4 +1,6 @@
 import { spawn, execSync } from "node:child_process";
+import fs from 'node:fs';
+import path from 'path';
 
 /**
  * @typedef {Object} VideoSettings
@@ -9,7 +11,7 @@ import { spawn, execSync } from "node:child_process";
  * @property {string} settings.videoCreator The channel name for the YouTube video.
  * @property {string} settings.videoTitle The title of the YouTube video.
  * @property {string} settings.videoDate The publish date of the YouTube video in YYY-MM-DD format.
- * @property {string} settings.outputFormat The output format for the file.
+ * @property {string} settings.outputFormat The output format for the file. Supported options are `markdown` and `txt`.
  */
 
 /**
@@ -17,7 +19,7 @@ import { spawn, execSync } from "node:child_process";
  * @param {string} command The name of the command to check.
  * @returns {boolean}
  */
-async function checkCmdExists(command) {
+export async function checkCmdExists(command) {
     try {
         let checkCmd;
         // 'which' for Unix, 'where' for Windows
@@ -34,12 +36,25 @@ async function checkCmdExists(command) {
 }
 
 /**
+ * Saves the book in the specified file format using Pandoc, and returns the absolute path to the file.
+ * @param {VideoSettings} settings The settings configuration.
+ * @param {string} bookText The Markdown-formatted text for the book.
+ * @returns {Promise<string>} The absolute path to the file.
+ */
+export async function saveFile(settings, bookText) {
+    // When more options are added, Markdown will be the default/fallback
+    const outputFilePath = path.resolve(settings.outputDir, `${settings.videoTitle} ${settings.videoId}.md`);
+    fs.writeFileSync(outputFilePath, bookText);
+    return outputFilePath;
+}
+
+/**
  * Check information for a SerpApi account.
  * More info: https://serpapi.com/account-api
  * @param {string} api_key The API key connected to the account
  * @returns {object} The JSON response from SerpApi.
  */
-async function getAccountInfo(apiKey) {
+export async function getAccountInfo(apiKey) {
     // Create API request
     const url = `https://serpapi.com/account?api_key=${apiKey}`
     try {
@@ -60,7 +75,7 @@ async function getAccountInfo(apiKey) {
  * @param {string} serpApiKey The API key for SerpApi.
  * @returns {Promise<object>} The object with `videoUrl`, `videoTitle`, `videoCreator`, and `videoDate` keys.
  */
-async function getSerpVideoInfo(videoId, serpApiKey) {
+export async function getSerpVideoInfo(videoId, serpApiKey) {
     let result;
     // Send API request
     const apiReq = {
@@ -99,7 +114,7 @@ async function getSerpVideoInfo(videoId, serpApiKey) {
  * @param {VideoSettings} settings The settings configuration.
  * @returns {Promise<string>} The generated book in Markdown format.
  */
-async function getSerpTranscript(settings) {
+export async function getSerpTranscript(settings) {
     let result;
     // Send API request
     const apiReq = {
@@ -160,7 +175,7 @@ language: en
  * @param {Array} args The arguments to pass to the command
  * @returns 
  */
-function runCommand(command, args) {
+export function runCommand(command, args) {
     return new Promise(function (resolve, reject) {
         const child = spawn(command, args);
         // Pipe output to parent console
@@ -180,5 +195,3 @@ function runCommand(command, args) {
         });
     });
 }
-
-export { checkCmdExists, runCommand, getAccountInfo, getSerpTranscript, getSerpVideoInfo }
