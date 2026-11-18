@@ -74,22 +74,28 @@ async function getSerpTranscript(settings) {
     const isSoundOnly = s => /^\s*(\[[^\]]*\]\s*)+$/.test(s);
     // Combine the chapters and snippets into one object
     const chapters = result.chapters.map(c => ({ ...c, snippets: [] }));
-    let i = 0;
+    let chapterIndex = 0;
     for (const line of result.transcript) {
-        while (i + 1 < chapters.length && chapters[i + 1].start_ms <= line.start_ms) i++;
+        while (chapterIndex + 1 < chapters.length && chapters[chapterIndex + 1].start_ms <= line.start_ms) chapterIndex++;
         // Skip lines in the transcript that are only sounds, like "[upbeat music]" or "[laughing]"
         if (isSoundOnly(line.snippet)) continue;
         // Remove leading line dash from some lines
         const snippet = line.snippet.replace(/^\s*-\s*/, "");
         // Add the snippet
-        chapters[i].snippets.push({ ...line, snippet });
+        chapters[chapterIndex].snippets.push({ ...line, snippet });
     }
     // Create Pandoc-formatted Markdown file
     let bookText = "";
     for (let chapter of chapters) {
         bookText += `# ${chapter.chapter}\n\n`;
-        for (let snippet of chapter.snippets) {
-            bookText += `${snippet.snippet}\n\n`;
+        for (let [i, value] of chapter.snippets.entries()) {
+            // For every 10 snippets, add a linked timestamp
+            if (i % 10 === 0) {
+                let timestamp = value.start_ms / 1000;
+                bookText += `${value.snippet} [[${value.start_time_text}](https://youtu.be/${settings.videoId}?t=${timestamp})]\n\n`;
+            } else {
+                bookText += `${value.snippet}\n\n`;
+            }
         }
     }
     // Write file
