@@ -10,6 +10,7 @@ import path from 'path';
  * @property {string} settings.videoUrl The full URL for the YouTube video.
  * @property {string} settings.videoCreator The channel name for the YouTube video.
  * @property {string} settings.videoTitle The title of the YouTube video.
+ * @property {string} settings.videoLang The requested language of the video transcript.
  * @property {string} settings.videoDate The publish date of the YouTube video in YYY-MM-DD format.
  * @property {string} settings.outputFormat The output format for the file. Supported options are `markdown` and `txt`.
  */
@@ -73,15 +74,19 @@ export async function getAccountInfo(apiKey) {
  * Get the URL, title, creator, and publish date of a YouTube video with SerpApi, and return them in a JSON object ready for appending to a VideoSettings object.
  * @param {string} videoId The ID of the YouTube video.
  * @param {string} serpApiKey The API key for SerpApi.
+ * @param {string} langCode The language code to use for the search.
  * @returns {Promise<object>} The object with `videoUrl`, `videoTitle`, `videoCreator`, and `videoDate` keys.
  */
-export async function getSerpVideoInfo(videoId, serpApiKey) {
+export async function getSerpVideoInfo(videoId, serpApiKey, langCode) {
     let result;
     // Send API request
     const apiReq = {
         engine: "youtube_video",
         v: videoId,
-        api_key: serpApiKey
+        api_key: serpApiKey,
+        // Force English in US for a predictable date format
+        gl: "us",
+        hl: "en"
     };
     const url = "https://serpapi.com/search?" + new URLSearchParams(apiReq);
     try {
@@ -93,7 +98,7 @@ export async function getSerpVideoInfo(videoId, serpApiKey) {
     } catch (error) {
         throw new Error(error);
     }
-    // Convert date to
+    // Convert date to Pandoc's preferred YYYY-MM-DD format
     let publishDate;
     if (result?.published_date) {
         const d = new Date(result.published_date + " UTC");
@@ -120,6 +125,7 @@ export async function getSerpTranscript(settings) {
     const apiReq = {
         engine: "youtube_video_transcript",
         v: settings.videoId,
+        language_code: settings.videoLang,
         api_key: settings.serpApiKey
     };
     const url = "https://serpapi.com/search?" + new URLSearchParams(apiReq);
@@ -145,14 +151,14 @@ export async function getSerpTranscript(settings) {
         // Add the snippet
         chapters[chapterIndex].snippets.push({ ...line, snippet });
     }
-    // Create Pandoc-formatted Markdown file
+    // Create Pandoc-formatted Markdown file, with metadata in YAML block at start
+    // Documentation: https://pandoc.org/MANUAL.html#extension-yaml_metadata_block
     let bookText = `---
 title: "${settings.videoTitle}"
 author: "${settings.videoCreator}"
 date: ${settings.videoDate}
 description: "${settings.videoUrl}"
 rights: "Converted with SerpApi Scribe: https://github.com/serpapi/scribe"
-language: en
 ---\n\n`;
     for (let chapter of chapters) {
         bookText += `# ${chapter.chapter}\n\n`;

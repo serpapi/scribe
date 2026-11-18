@@ -108,9 +108,11 @@ async function main() {
         return;
     }
     actionData.videoId = videoId;
+    // Set language (TODO: make this customizable)
+    actionData.videoLang = "en";
     // Get video information and transcript
     console.log("Fetching video information...");
-    let videoInfo = await getSerpVideoInfo(actionData.videoId, actionData.serpApiKey);
+    let videoInfo = await getSerpVideoInfo(actionData.videoId, actionData.serpApiKey, actionData.videoLang);
     actionData = {...actionData, ...videoInfo};
     console.log('Fetching transcript...');
     let bookText = await getSerpTranscript(actionData);
