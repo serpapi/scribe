@@ -2,14 +2,14 @@
 
 // CLI for Scribe
 
+import { machine, type, release } from "node:os";
 import * as readline from 'node:readline/promises';
 import path from 'path';
-import { checkCmdExists, runCommand } from './main.js';
+import { checkCmdExists, runCommand, getAccountInfo, getSerpTranscript } from './main.js';
 import { loadEnvFile, env, stdin, stdout } from 'node:process';
 import fs from 'node:fs';
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
-const booksDir = path.resolve(process.cwd(), './books');
 
 // Regex to find video ID in a YouTube URL, demo: https://regex101.com/r/0Plpyd/1
 const youtubeRegex = /^.*(youtu\.be\/|embed\/|shorts\/|\?v=|\&v=)(?<videoID>[^#\&\?]*).*/;
@@ -19,7 +19,6 @@ const envFilePath = "./.env"
 if (fs.existsSync(envFilePath)) {
     loadEnvFile(envFilePath);
 }
-let globalApiKey = env.SERPAPI_KEY;
 
 /**
  * Get the list of arguments from command line and parse them as an object.
@@ -74,11 +73,23 @@ async function saveApiKey(pathToFile) {
 }
 
 async function main() {
+    const booksDir = path.resolve(process.cwd(), './books');
     const args = getArgs();
-    if (globalApiKey === "" || globalApiKey == undefined || args.hasOwnProperty("login")) {
-        // Set API key if it's missing, or if the user requested a login again
-        await saveApiKey(envFilePath);
-    };
+    let convertInfo = {};
+    // Show help message if requested or missing parameters
+    if (!args.hasOwnProperty("url") || args.hasOwnProperty("help")) {
+        showHelp();
+        return;
+    }
+    // Set API key
+    if (env.SERPAPI_KEY) {
+        convertInfo.serpApiKey = env.SERPAPI_KEY;
+    } else if (args.hasOwnProperty("login") || env.SERPAPI_KEY === "") {
+        convertInfo.serpApiKey = await saveApiKey(envFilePath);
+    }
+    // Show welcome message
+    const accountData = await getAccountInfo(convertInfo.serpApiKey);
+    console.log(`SerpAPI Scribe - ${type()} ${release()} (${machine()})\n======\nAccount email: ${accountData["account_email"] || "Unknown"}\nRemaining searches: ${accountData["total_searches_left"] || "Unknown"}\nManage account: https://serpapi.com/dashboard\n======\n`);
     // Check that books folder is available
     if (fs.existsSync(booksDir)) {
         console.log(`Found books directory: ${booksDir}`);
@@ -86,6 +97,7 @@ async function main() {
         fs.mkdirSync(booksDir);
         console.log(`Created books directory: ${booksDir}`);
     }
+    convertInfo.outputDir = booksDir;
     // Check that valid URL is provided
     let videoId;
     try {
@@ -93,8 +105,15 @@ async function main() {
         console.log(`Found video ID: ${videoId}`);
     } catch (e) {
         console.log(`Could not extract video ID from URL: ${args.url}`);
-        process.exit(1);
+        return;
     }
+    convertInfo.videoId = videoId;
+    // Set file format (will eventually contain more than .txt)
+    convertInfo.outputFormat = "html";
+    // Get video transcript
+    console.log('Fetching transcript...');
+    let exportedPath = await getSerpTranscript(convertInfo);
+    console.log(`Saved file: ${exportedPath}`);
 }
 
 // Listen for termination signals
