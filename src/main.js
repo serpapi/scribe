@@ -61,14 +61,15 @@ export function saveFile(settings, bookText) {
     let outputFilePath;
     if (settings.outputFormat === "epub") {
         // ePub format
+        // This adds a random UUID to prevent issues with Send to Kindle: https://www.amimetic.co.uk/blog/kindle-ready-ebooks-from-markdown
         outputFilePath = path.resolve(settings.outputDir, `${settings.videoTitle} ${settings.videoId}.epub`);
         execFileSync(
             "pandoc",
-            ["-f", "markdown+yaml_metadata_block", "-t", "epub", "-o", outputFilePath],
+            ["-f", "markdown+yaml_metadata_block", "-t", "epub3", "--metadata", `uuid='${crypto.randomUUID()}'`, "--table-of-contents=true", "-o", outputFilePath],
             { input: bookText, encoding: 'utf8' }
         );
     } if (settings.outputFormat === "html") {
-        // ePub format
+        // HTML format
         outputFilePath = path.resolve(settings.outputDir, `${settings.videoTitle} ${settings.videoId}.html`);
         execFileSync(
             "pandoc",
