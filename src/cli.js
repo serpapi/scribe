@@ -75,7 +75,7 @@ async function saveApiKey(pathToFile) {
 async function main() {
     const booksDir = path.resolve(process.cwd(), './books');
     const args = getArgs();
-    let actionData = {};
+    let settings = {};
     // Show help message if requested or missing parameters
     if (!args.hasOwnProperty("url") || args.hasOwnProperty("help")) {
         showHelp();
@@ -89,12 +89,12 @@ async function main() {
     }
     // Set API key
     if (env.SERPAPI_KEY) {
-        actionData.serpApiKey = env.SERPAPI_KEY;
+        settings.serpApiKey = env.SERPAPI_KEY;
     } else if (args.hasOwnProperty("login") || env.SERPAPI_KEY === "") {
-        actionData.serpApiKey = await saveApiKey(envFilePath);
+        settings.serpApiKey = await saveApiKey(envFilePath);
     }
     // Show welcome message
-    const accountData = await getAccountInfo(actionData.serpApiKey);
+    const accountData = await getAccountInfo(settings.serpApiKey);
     console.log(`SerpAPI Scribe - ${type()} ${release()} (${machine()})\n======\nAccount email: ${accountData["account_email"] || "Unknown"}\nRemaining searches: ${accountData["total_searches_left"] || "Unknown"}\nManage account: https://serpapi.com/dashboard\n======\n`);
     // Check that books folder is available
     if (fs.existsSync(booksDir)) {
@@ -103,7 +103,7 @@ async function main() {
         fs.mkdirSync(booksDir);
         console.log(`Created books directory: ${booksDir}`);
     }
-    actionData.outputDir = booksDir;
+    settings.outputDir = booksDir;
     // Check that valid URL is provided
     let videoId;
     try {
@@ -114,26 +114,26 @@ async function main() {
         process.exit(1);
     }
     // Set the video ID and output format
-    actionData.videoId = videoId;
+    settings.videoId = videoId;
     if (!args.hasOwnProperty("format")) {
         console.log("No output format specified, defaulting to ePub.");
-        actionData.outputFormat = "epub";
+        settings.outputFormat = "epub";
     } else if (outputFormats.includes(args.format)) {
-        accountData.outputFormat = args.format;
+        settings.outputFormat = args.format;
     } else {
         console.log(`Invalid format, try again with one of these options: ${outputFormats.join(', ')}`);
         process.exit(1);
     }
     // Set language (TODO: make this customizable)
-    actionData.videoLang = "en";
+    settings.videoLang = "en";
     // Get video information and transcript
     console.log("Fetching video information...");
-    let videoInfo = await getSerpVideoInfo(actionData.videoId, actionData.serpApiKey, actionData.videoLang);
-    actionData = {...actionData, ...videoInfo};
+    let videoInfo = await getSerpVideoInfo(settings.videoId, settings.serpApiKey, settings.videoLang);
+    settings = {...settings, ...videoInfo};
     console.log('Fetching transcript...');
-    let bookText = await getSerpTranscript(actionData);
+    let bookText = await getSerpTranscript(settings);
     // Write file
-    let savedFilePath = saveFile(actionData, bookText);
+    let savedFilePath = saveFile(settings, bookText);
     console.log(`Saved file: ${savedFilePath}`);
 }
 
