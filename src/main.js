@@ -140,7 +140,12 @@ export async function getSerpTranscript(settings) {
     }
     const isSoundOnly = s => /^\s*(\[[^\]]*\]\s*)+$/.test(s);
     // Combine the chapters and snippets into one object
-    const chapters = result.chapters.map(c => ({ ...c, snippets: [] }));
+    let chapters;
+    if (result?.chapters) {
+        chapters = result.chapters.map(c => ({ ...c, snippets: [] }));
+    } else {
+        chapters = [{ chapter: null, start_ms: 0, snippets: [] }]
+    }
     let chapterIndex = 0;
     for (const line of result.transcript) {
         while (chapterIndex + 1 < chapters.length && chapters[chapterIndex + 1].start_ms <= line.start_ms) chapterIndex++;
@@ -161,7 +166,7 @@ description: "${settings.videoUrl}"
 rights: "Converted with SerpApi Scribe: https://github.com/serpapi/scribe"
 ---\n\n`;
     for (let chapter of chapters) {
-        bookText += `# ${chapter.chapter}\n\n`;
+        if (chapter.chapter) bookText += `# ${chapter.chapter}\n\n`;
         for (let [i, value] of chapter.snippets.entries()) {
             // For every 10 snippets, add a linked timestamp
             if (i % 10 === 0) {
