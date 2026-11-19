@@ -124,7 +124,6 @@ async function main() {
         console.log(`Invalid format, try again with one of these options: ${outputFormats.join(', ')}`);
         process.exit(1);
     }
-    actionData.outputFormat = args?.format;
     // Set language (TODO: make this customizable)
     actionData.videoLang = "en";
     // Get video information and transcript
