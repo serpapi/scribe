@@ -10,6 +10,8 @@ import path from 'path';
  * @property {string} settings.videoUrl The full URL for the YouTube video.
  * @property {string} settings.videoCreator The channel name for the YouTube video.
  * @property {string} settings.videoTitle The title of the YouTube video.
+ * @property {string} settings.videoDescription The description of the video.
+ * @property {Array} settings.videoTags The video's tags.
  * @property {string} settings.videoLang The requested language of the video transcript.
  * @property {string} settings.videoDate The publish date of the YouTube video in YYY-MM-DD format.
  * @property {string} settings.outputFormat The output format for the file. Supported options are `markdown` and `txt`.
@@ -109,7 +111,9 @@ export async function getSerpVideoInfo(videoId, serpApiKey, langCode) {
         videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
         videoTitle: (result?.title || "Unknown Title"),
         videoCreator: (result?.channel?.name || "Unknown Creator"),
-        videoDate: (publishDate || "")
+        videoDate: (publishDate || ""),
+        videoDescription: (result?.description?.content || ""),
+        videoTags: (result?.keywords || [])
     }
     return data;
 }
@@ -162,20 +166,29 @@ export async function getSerpTranscript(settings) {
 title: "${settings.videoTitle}"
 author: "${settings.videoCreator}"
 date: ${settings.videoDate}
-description: "${settings.videoUrl}"
-rights: "Converted with SerpApi Scribe: https://github.com/serpapi/scribe"
----\n\n`;
+keywords: ${settings.videoTags.toString()}
+---
+
+**This file was converted with [SerpApi Scribe](https://github.com/serpapi/scribe)**
+
+**Link to video: [${settings.videoUrl}](${settings.videoUrl})**
+
+`;
     for (let chapter of chapters) {
         if (chapter.chapter) bookText += `# ${chapter.chapter}\n\n`;
         for (let [i, value] of chapter.snippets.entries()) {
+            bookText += value.snippet;
             // For every 10 snippets, add a linked timestamp
             if (i % 10 === 0) {
                 let timestamp = value.start_ms / 1000;
-                bookText += `${value.snippet} [[${value.start_time_text}](https://youtu.be/${settings.videoId}?t=${timestamp})]\n\n`;
-            } else {
-                bookText += `${value.snippet}\n\n`;
+                bookText += ` [[${value.start_time_text}](https://youtu.be/${settings.videoId}?t=${timestamp})]`;
             }
+            bookText += "\n\n";
         }
+    }
+    // Add a chapter at the end for the video description
+    if (settings.videoDescription) {
+        bookText += `# Video Description\n\n${settings.videoDescription}`;
     }
     return bookText;
 }
