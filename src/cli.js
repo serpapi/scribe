@@ -5,7 +5,7 @@
 import { machine, type, release } from "node:os";
 import * as readline from 'node:readline/promises';
 import path from 'path';
-import { checkCmdExists, getAccountInfo, getSerpTranscript, getSerpVideoInfo, saveFile } from './main.js';
+import { checkCmdExists, getAccountInfo, getSerpTranscript, getSerpVideoInfo, saveFile, outputFormats } from './main.js';
 import { loadEnvFile, env, stdin, stdout } from 'node:process';
 import fs from 'node:fs';
 
@@ -113,7 +113,18 @@ async function main() {
         console.log(`Could not extract video ID from URL: ${args.url}`);
         process.exit(1);
     }
+    // Set the video ID and output format
     actionData.videoId = videoId;
+    if (!args.hasOwnProperty("format")) {
+        console.log("No output format specified, defaulting to ePub.");
+        actionData.outputFormat = "epub";
+    } else if (outputFormats.includes(args.format)) {
+        accountData.outputFormat = args.format;
+    } else {
+        console.log(`Invalid format, try again with one of these options: ${outputFormats.join(', ')}`);
+        process.exit(1);
+    }
+    actionData.outputFormat = args?.format;
     // Set language (TODO: make this customizable)
     actionData.videoLang = "en";
     // Get video information and transcript
@@ -123,7 +134,7 @@ async function main() {
     console.log('Fetching transcript...');
     let bookText = await getSerpTranscript(actionData);
     // Write file
-    let savedFilePath = await saveFile(actionData, bookText);
+    let savedFilePath = saveFile(actionData, bookText);
     console.log(`Saved file: ${savedFilePath}`);
 }
 

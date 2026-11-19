@@ -4,7 +4,7 @@
   "description": "Convert a YouTube video into an eBook for easy reading.",
   "main": "src/cli.js",
   "scripts": {
-    "test": "node src/cli.js 'https://youtu.be/gzF7aHxk4Y4'"
+    "test": "node src/cli.js 'https://youtu.be/gzF7aHxk4Y4' -format epub"
   },
   "repository": {
     "type": "git",

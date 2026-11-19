@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execSync, execFileSync } from "node:child_process";
 import fs from 'node:fs';
 import path from 'path';
 
@@ -17,6 +17,9 @@ import path from 'path';
  * @property {string} settings.videoDate The publish date of the YouTube video in YYY-MM-DD format.
  * @property {string} settings.outputFormat The output format for the file. Supported options are `markdown` and `txt`.
  */
+
+// List of valid supported export options
+export const outputFormats = ["markdown", "html", "epub", "txt", "rtf"];
 
 /**
  * Checks if a given command or executable is available to the system.
@@ -50,14 +53,49 @@ function cleanTitle(title) {
 
 /**
  * Saves the book in the specified file format using Pandoc, and returns the absolute path to the file.
- * @param {VideoSettings} settings The settings configuration.
+ * @param {VideoSettings} settings The video settings configuration. This reads the `setting.outputFormat` key.
  * @param {string} bookText The Markdown-formatted text for the book.
- * @returns {Promise<string>} The absolute path to the file.
+ * @returns {string} The absolute path to the file.
  */
-export async function saveFile(settings, bookText) {
-    // When more options are added, Markdown will be the default/fallback
-    const outputFilePath = path.resolve(settings.outputDir, `${settings.videoTitle} ${settings.videoId}.md`);
-    fs.writeFileSync(outputFilePath, bookText);
+export function saveFile(settings, bookText) {
+    let outputFilePath;
+    if (settings.outputFormat === "epub") {
+        // ePub format
+        outputFilePath = path.resolve(settings.outputDir, `${settings.videoTitle} ${settings.videoId}.epub`);
+        execFileSync(
+            "pandoc",
+            ["-f", "markdown+yaml_metadata_block", "-t", "epub", "-o", outputFilePath],
+            { input: bookText, encoding: 'utf8' }
+        );
+    } if (settings.outputFormat === "html") {
+        // ePub format
+        outputFilePath = path.resolve(settings.outputDir, `${settings.videoTitle} ${settings.videoId}.html`);
+        execFileSync(
+            "pandoc",
+            ["-f", "markdown+yaml_metadata_block", "-t", "html", "--standalone", "--wrap=none", "--table-of-contents=true", "-o", outputFilePath],
+            { input: bookText, encoding: 'utf8' }
+        );
+    } else if (settings.outputFormat === "txt") {
+        // Plain text format
+        outputFilePath = path.resolve(settings.outputDir, `${settings.videoTitle} ${settings.videoId}.txt`);
+        execFileSync(
+            "pandoc",
+            ["-f", "markdown+yaml_metadata_block", "-t", "plain", "--wrap=none", "-o", outputFilePath],
+            { input: bookText, encoding: 'utf8' }
+        );
+    } else if (settings.outputFormat === "rtf") {
+        // Rich Text Format
+        outputFilePath = path.resolve(settings.outputDir, `${settings.videoTitle} ${settings.videoId}.rtf`);
+        execFileSync(
+            "pandoc",
+            ["-f", "markdown+yaml_metadata_block", "-t", "rtf", "--standalone", "--wrap=none", "-o", outputFilePath],
+            { input: bookText, encoding: 'utf8' }
+        );
+    } else if (settings.outputFormat === "markdown") {
+        // Markdown format, no conversion is needed
+        outputFilePath = path.resolve(settings.outputDir, `${settings.videoTitle} ${settings.videoId}.md`);
+        fs.writeFileSync(outputFilePath, bookText);
+    }
     return outputFilePath;
 }
 
@@ -181,7 +219,7 @@ date: ${settings.videoDate}
 keywords: [${settings.videoTags.toString()}]
 ---
 
-**This file was converted with [SerpApi Scribe](https://github.com/serpapi/scribe)**
+**This file was converted with SerpApi Scribe: [https://github.com/serpapi/scribe](https://github.com/serpapi/scribe)**
 
 **Link to video: [${settings.videoUrl}](${settings.videoUrl})**
 
