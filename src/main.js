@@ -1,4 +1,4 @@
-import { spawn, execSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import fs from 'node:fs';
 import path from 'path';
 
@@ -23,7 +23,7 @@ import path from 'path';
  * @param {string} command The name of the command to check.
  * @returns {boolean}
  */
-export async function checkCmdExists(command) {
+export function checkCmdExists(command) {
     try {
         let checkCmd;
         // 'which' for Unix, 'where' for Windows
@@ -135,7 +135,6 @@ export async function getSerpVideoInfo(videoId, serpApiKey, langCode) {
  * @returns {Promise<string>} The generated book in Markdown format.
  */
 export async function getSerpTranscript(settings) {
-    console.log(settings)
     let result;
     // Send API request
     const apiReq = {
@@ -210,31 +209,4 @@ keywords: [${settings.videoTags.toString()}]
         bookText += `# Description\n\n${settings.videoDescription}`;
     }
     return bookText;
-}
-
-/**
- * Runs a command in a child process as a Promise
- * @param {String} command The command to run and wait for completion
- * @param {Array} args The arguments to pass to the command
- * @returns 
- */
-export function runCommand(command, args) {
-    return new Promise(function (resolve, reject) {
-        const child = spawn(command, args);
-        // Pipe output to parent console
-        child.stdout.pipe(process.stdout);
-        child.stderr.pipe(process.stderr);
-        // Resolve when the process finishes successfully
-        child.on('close', function (code) {
-            if (code === 0) {
-                resolve();
-            } else {
-                reject(new Error(`Process exited with code ${code}`));
-            }
-        });
-        // Reject if the command fails to start (e.g., command not found)
-        child.on('error', function (err) {
-            reject(err);
-        });
-    });
 }

@@ -5,7 +5,7 @@
 import { machine, type, release } from "node:os";
 import * as readline from 'node:readline/promises';
 import path from 'path';
-import { checkCmdExists, runCommand, getAccountInfo, getSerpTranscript, getSerpVideoInfo, saveFile } from './main.js';
+import { checkCmdExists, getAccountInfo, getSerpTranscript, getSerpVideoInfo, saveFile } from './main.js';
 import { loadEnvFile, env, stdin, stdout } from 'node:process';
 import fs from 'node:fs';
 
@@ -81,6 +81,12 @@ async function main() {
         showHelp();
         return;
     }
+    // Check that Pandoc is installed
+    const pandocInstalled = checkCmdExists("pandoc");
+    if (!pandocInstalled) {
+        console.log("Pandoc is required but is not installed. Get it from here: https://pandoc.org/installing.html\n");
+        process.exit(1);
+    }
     // Set API key
     if (env.SERPAPI_KEY) {
         actionData.serpApiKey = env.SERPAPI_KEY;
@@ -105,7 +111,7 @@ async function main() {
         console.log(`Found video ID: ${videoId}`);
     } catch (e) {
         console.log(`Could not extract video ID from URL: ${args.url}`);
-        return;
+        process.exit(1);
     }
     actionData.videoId = videoId;
     // Set language (TODO: make this customizable)
