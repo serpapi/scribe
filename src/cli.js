@@ -2,7 +2,7 @@
 
 // CLI for Scribe
 
-import { machine, type, release } from "node:os";
+import os from "node:os";
 import * as readline from 'node:readline/promises';
 import path from 'path';
 import { checkCmdExists, getAccountInfo, getSerpTranscript, getSerpVideoInfo, saveFile, outputFormats, serpLangs } from './main.js';
@@ -15,7 +15,7 @@ const rl = readline.createInterface({ input: stdin, output: stdout });
 const youtubeRegex = /^.*(youtu\.be\/|embed\/|shorts\/|\?v=|\&v=)(?<videoID>[^#\&\?]*).*/;
 
 // Load environment variables
-const envFilePath = "./.env"
+const envFilePath = path.resolve(os.homedir(), ".scribe-settings");
 if (fs.existsSync(envFilePath)) {
     loadEnvFile(envFilePath);
 }
@@ -87,9 +87,13 @@ async function main() {
         process.exit(1);
     }
     // Set API key
-    if (env.SERPAPI_KEY) {
+    if (args.hasOwnProperty("login")) {
+        settings.serpApiKey = await saveApiKey(envFilePath);
+    } else if (env.SERPAPI_KEY) {
         settings.serpApiKey = env.SERPAPI_KEY;
-    } else if (args.hasOwnProperty("login") || env.SERPAPI_KEY === "") {
+    } else {
+        // For now, SerpApi is the only supported provider
+        console.log(`No SerpAPI key found in ${envFilePath}`);
         settings.serpApiKey = await saveApiKey(envFilePath);
     }
     // Check for valid account and enough searches for request

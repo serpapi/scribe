@@ -111,7 +111,7 @@ export function saveFile(settings, bookText) {
  * Check information for a SerpApi account.
  * More info: https://serpapi.com/account-api
  * @param {string} api_key The API key connected to the account
- * @returns {object} The JSON response from SerpApi.
+ * @returns {Promise<object>} The JSON response from SerpApi.
  */
 export async function getAccountInfo(apiKey) {
     // Create API request
