@@ -93,6 +93,7 @@ async function main() {
         settings.serpApiKey = await saveApiKey(envFilePath);
     }
     // Check for valid account and enough searches for request
+    let accountData;
     try {
         accountData = await getAccountInfo(settings.serpApiKey);
     } catch (e) {
