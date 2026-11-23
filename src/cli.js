@@ -73,7 +73,7 @@ async function saveApiKey(pathToFile) {
 }
 
 async function main() {
-    const booksDir = path.resolve(process.cwd(), './books');
+    const outputDir = path.resolve(process.cwd());
     const args = getArgs();
     let settings = {};
     // Show help message if requested or missing parameters
@@ -96,14 +96,8 @@ async function main() {
     // Show welcome message
     const accountData = await getAccountInfo(settings.serpApiKey);
     console.log(`SerpAPI Scribe - ${type()} ${release()} (${machine()})\n======\nAccount email: ${accountData["account_email"] || "Unknown"}\nRemaining searches: ${accountData["total_searches_left"] || "Unknown"}\nManage account: https://serpapi.com/dashboard\n======\n`);
-    // Check that books folder is available
-    if (fs.existsSync(booksDir)) {
-        console.log(`Found books directory: ${booksDir}`);
-    } else {
-        fs.mkdirSync(booksDir);
-        console.log(`Created books directory: ${booksDir}`);
-    }
-    settings.outputDir = booksDir;
+    // Set output directory
+    settings.outputDir = outputDir;
     // Check that valid URL is provided
     try {
         settings.videoId = youtubeRegex.exec(args.url)['groups']['videoID'];

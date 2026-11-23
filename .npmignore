@@ -13,5 +13,11 @@ Dockerfile
 .dockerignore
 captain-definition
 
-# Book storage
-books
+# Files generated with Scribe
+*.md
+!README.md
+*.html
+!src/**/*.html
+*.epub
+*.rtf
+*.txt

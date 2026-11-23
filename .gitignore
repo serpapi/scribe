@@ -148,6 +148,14 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 
+# Files generated with Scribe
+*.md
+!README.md
+*.html
+!src/**/*.html
+*.epub
+*.rtf
+*.txt
+
 # Extra files
-books
 .DS_Store
