@@ -1,6 +1,7 @@
 import { execSync, execFileSync } from "node:child_process";
 import fs from 'node:fs';
 import path from 'path';
+import supportedLangs from './serpapi-transcript-languages.json' with { type: 'json' };
 
 /**
  * @typedef {Object} VideoSettings
@@ -20,6 +21,9 @@ import path from 'path';
 
 // List of valid supported export options
 export const outputFormats = ["markdown", "html", "epub", "txt", "rtf"];
+
+// List of valid languages for SerpApi YouTube Video Transcript API
+export const serpLangs = supportedLangs;
 
 /**
  * Checks if a given command or executable is available to the system.
@@ -179,6 +183,7 @@ export async function getSerpTranscript(settings) {
     const apiReq = {
         engine: "youtube_video_transcript",
         v: settings.videoId,
+        // Supported languages: https://serpapi.com/youtube-video-transcript-languages
         language_code: settings.videoLang,
         api_key: settings.serpApiKey
     };

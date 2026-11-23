@@ -4,7 +4,8 @@
   "description": "Convert a YouTube video into an eBook for easy reading.",
   "main": "src/cli.js",
   "scripts": {
-    "test": "node src/cli.js 'https://youtu.be/gzF7aHxk4Y4' -format epub"
+    "test": "node src/cli.js 'https://youtu.be/gzF7aHxk4Y4' -format epub -lang en-GB",
+    "update-langs": "curl --output './src/serpapi-transcript-languages.json' 'https://serpapi.com/youtube-video-transcript-languages.json'"
   },
   "repository": {
     "type": "git",

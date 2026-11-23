@@ -5,7 +5,7 @@
 import { machine, type, release } from "node:os";
 import * as readline from 'node:readline/promises';
 import path from 'path';
-import { checkCmdExists, getAccountInfo, getSerpTranscript, getSerpVideoInfo, saveFile, outputFormats } from './main.js';
+import { checkCmdExists, getAccountInfo, getSerpTranscript, getSerpVideoInfo, saveFile, outputFormats, serpLangs } from './main.js';
 import { loadEnvFile, env, stdin, stdout } from 'node:process';
 import fs from 'node:fs';
 
@@ -105,16 +105,14 @@ async function main() {
     }
     settings.outputDir = booksDir;
     // Check that valid URL is provided
-    let videoId;
     try {
-        videoId = youtubeRegex.exec(args.url)['groups']['videoID'];
-        console.log(`Found video ID: ${videoId}`);
+        settings.videoId = youtubeRegex.exec(args.url)['groups']['videoID'];
+        console.log(`Found video ID: ${settings.videoId}`);
     } catch (e) {
         console.log(`Could not extract video ID from URL: ${args.url}`);
         process.exit(1);
     }
-    // Set the video ID and output format
-    settings.videoId = videoId;
+    // Set the output format
     if (!args.hasOwnProperty("format")) {
         console.log("No output format specified, defaulting to ePub.");
         settings.outputFormat = "epub";
@@ -124,8 +122,16 @@ async function main() {
         console.log(`Invalid format, try again with one of these options: ${outputFormats.join(', ')}`);
         process.exit(1);
     }
-    // Set language (TODO: make this customizable)
-    settings.videoLang = "en";
+    // Set the requested language
+    if (!args.hasOwnProperty("lang")) {
+        console.log("No language specified, defaulting to US English (en-us).");
+        settings.videoLang = "en-us";
+    } else if (serpLangs.some(lang => lang.language_code.toLowerCase() === args.lang.toLowerCase())) {
+        settings.videoLang = args.lang;
+    } else {
+        console.log(`Invalid language, try again with one of these options: ${serpLangs.map(lang => lang.language_code).join(', ')}`);
+        process.exit(1);
+    }
     // Get video information and transcript
     console.log("Fetching video information...");
     let videoInfo = await getSerpVideoInfo(settings.videoId, settings.serpApiKey, settings.videoLang);
