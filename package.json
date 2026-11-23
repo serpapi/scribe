@@ -4,7 +4,7 @@
   "description": "Convert a YouTube video into an eBook for easy reading.",
   "main": "src/cli.js",
   "scripts": {
-    "test": "node src/cli.js 'https://youtu.be/gzF7aHxk4Y4' -format epub -lang en-GB",
+    "test": "node src/cli.js 'https://youtu.be/gzF7aHxk4Y4' -format epub -lang en-GB -o test.epub",
     "update-langs": "curl --output './src/serpapi-transcript-languages.json' 'https://serpapi.com/youtube-video-transcript-languages.json'"
   },
   "repository": {
@@ -16,7 +16,13 @@
     "serpapi",
     "video",
     "ebook",
-    "epub"
+    "e-book",
+    "epub",
+    "rtf",
+    "markdown",
+    "md",
+    "ereader",
+    "e-reader"
   ],
   "license": "MIT",
   "author": "SerpApi <contact@serpapi.com> (https://serpapi.com/)",

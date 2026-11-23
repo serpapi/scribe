@@ -105,9 +105,18 @@ async function main() {
         console.log('Not enough SerpApi searches remaining! Check your account here: https://serpapi.com/dashboard');
         process.exit(1);
     }
-    // Set output directory
-    const outputDir = path.resolve(process.cwd());
-    settings.outputDir = outputDir;
+    // Set default output directory, with override if specified
+    settings.currentDir = path.resolve(process.cwd());
+    if (args.hasOwnProperty("o")) {
+        const customPath = path.resolve(process.cwd(), args.o);
+        const customDir = path.dirname(customPath);
+        if (fs.existsSync(customDir)) {
+            settings.outputPath = customPath;
+        } else {
+            console.log(`Path does not exist: ${customDir}`);
+            process.exit(1);
+        }
+    }
     // Check that valid URL is provided
     try {
         settings.videoId = youtubeRegex.exec(args.url)['groups']['videoID'];
