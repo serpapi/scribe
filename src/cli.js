@@ -73,7 +73,6 @@ async function saveApiKey(pathToFile) {
 }
 
 async function main() {
-    const outputDir = path.resolve(process.cwd());
     const args = getArgs();
     let settings = {};
     // Show help message if requested or missing parameters
@@ -93,10 +92,20 @@ async function main() {
     } else if (args.hasOwnProperty("login") || env.SERPAPI_KEY === "") {
         settings.serpApiKey = await saveApiKey(envFilePath);
     }
-    // Show welcome message
-    const accountData = await getAccountInfo(settings.serpApiKey);
-    console.log(`SerpAPI Scribe - ${type()} ${release()} (${machine()})\n======\nAccount email: ${accountData["account_email"] || "Unknown"}\nRemaining searches: ${accountData["total_searches_left"] || "Unknown"}\nManage account: https://serpapi.com/dashboard\n======\n`);
+    // Check for valid account and enough searches for request
+    try {
+        accountData = await getAccountInfo(settings.serpApiKey);
+    } catch (e) {
+        console.log("Error logging into SerpApi:", e.message);
+        process.exit(1);
+    }
+    console.log(`Logged in with SerpApi account ${accountData["account_email"] || "(unknown email)"}`);
+    if (accountData?.total_searches_left !== undefined && accountData.total_searches_left < 2) {
+        console.log('Not enough SerpApi searches remaining! Check your account here: https://serpapi.com/dashboard');
+        process.exit(1);
+    }
     // Set output directory
+    const outputDir = path.resolve(process.cwd());
     settings.outputDir = outputDir;
     // Check that valid URL is provided
     try {
